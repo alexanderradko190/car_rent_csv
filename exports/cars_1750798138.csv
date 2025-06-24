@@ -1,0 +1,13 @@
+ID,Марка,Модель,Год,VIN,Гос. номер,Класс,Мощность,Цена/час,Статус,Текущий арендатор
+2,Toyota,Camry,2022,JTNB11HK0K3001235,А125ВС799,comfort,181,900.00,rented,1
+3,Toyota,Camry,2022,JTNB11HK0K3001236,А127ВС799,business,181,1500.00,rented,1
+4,Toyota,Camry,2022,JTNB11HK0K3001237,А129ВС799,comfort,181,900.00,rented,
+5,Toyota,Camry,2022,JTNB11HK0K3001238,B997XX99,business,181,1500.00,available,1
+6,Toyota,Camry,2022,JTNB11HK0K3001239,А132ВС799,comfort,181,900.00,rented,
+7,Toyota,Camry,2022,JTNB11HK0K3001252,А135ВС799,comfort,181,900.00,available,
+8,Hyundai,Solaris,2022,WAUZZZ8V8GA123456,A123BC197,economy,110,500.00,available,
+9,Toyota,Camry,2023,JTNBE46K573021523,X125XX777,business,181,950.00,available,
+10,Toyota,Camry,2023,JTNBE46K573021525,X127XX777,business,181,950.00,available,
+11,Toyota,Camry,2023,JTNBE46K573021527,X128XX777,business,181,950.00,available,
+12,Toyota,Camry,2023,JTNBE46K573021530,X131XX777,business,181,950.00,available,
+13,Toyota,Camry,2023,JTNBE46K573021535,X132XX777,comfort,181,950.00,available,
