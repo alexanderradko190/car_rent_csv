@@ -9,7 +9,6 @@ type ExportRepository interface {
 	GetRentalRequests() ([]entity.RentalRequest, error)
 }
 
-// Mock реализация (заменить на БД при необходимости)
 type mockExportRepository struct{}
 
 func NewExportRepository() ExportRepository {

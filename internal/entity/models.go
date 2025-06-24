@@ -1,7 +1,7 @@
 package entity
 
 import (
-	"database/sql" // <--- Это обязательно!
+	"database/sql"
 	"time"
 )
 
@@ -16,7 +16,7 @@ type Car struct {
 	Power           int
 	HourlyRate      float64
 	Status          string
-	CurrentRenterID sql.NullInt64 // <-- теперь Go точно знает, что это за тип
+	CurrentRenterID sql.NullInt64
 }
 
 type Client struct {
