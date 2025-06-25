@@ -1,4 +1,4 @@
-// Package repository реализует слой доступа к данным для экспорта
+// Package repository реализует слой доступа к данным (репозитории) для экспорта.
 package repository
 
 import (
@@ -6,7 +6,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// ExportRepository определяет интерфейс для экспорта данных из базы
+// ExportRepository определяет интерфейс для экспорта данных из базы.
 type ExportRepository interface {
 	GetCars() ([]entity.Car, error)
 	GetClients() ([]entity.Client, error)
@@ -18,6 +18,7 @@ type exportRepository struct {
 	db *gorm.DB
 }
 
+// NewExportRepository создаёт новый репозиторий экспорта.
 func NewExportRepository(db *gorm.DB) ExportRepository {
 	return &exportRepository{db: db}
 }
