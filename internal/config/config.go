@@ -1,3 +1,4 @@
+// Package config содержит работу с конфигурацией и .env переменными
 package config
 
 import (
@@ -7,6 +8,7 @@ import (
 	"github.com/joho/godotenv"
 )
 
+// Config содержит настройки подключения к БД и экспорта
 type Config struct {
 	DBHost    string
 	DBPort    string
@@ -16,6 +18,7 @@ type Config struct {
 	ExportDir string
 }
 
+// LoadConfig загружает конфигурацию из .env и переменных окружения
 func LoadConfig() *Config {
 	_ = godotenv.Load(".env")
 	cfg := &Config{

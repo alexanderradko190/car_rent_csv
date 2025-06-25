@@ -1,3 +1,4 @@
+// Package service реализует бизнес-логику и сервисы экспорта данных.
 package service
 
 import (
@@ -11,15 +12,18 @@ import (
 	"time"
 )
 
+// ExportService реализует экспорт данных в CSV.
 type ExportService struct {
 	repo      repository.ExportRepository
 	exportDir string
 }
 
+// NewExportService создаёт новый сервис экспорта.
 func NewExportService(repo repository.ExportRepository, exportDir string) *ExportService {
 	return &ExportService{repo: repo, exportDir: exportDir}
 }
 
+// ExportCars экспортирует автомобили в CSV и возвращает путь к файлу.
 func (s *ExportService) ExportCars() (string, error) {
 	cars, err := s.repo.GetCars()
 	if err != nil {
@@ -35,6 +39,7 @@ func (s *ExportService) ExportCars() (string, error) {
 	return file, nil
 }
 
+// ExportClients экспортирует клиентов в CSV и возвращает путь к файлу.
 func (s *ExportService) ExportClients() (string, error) {
 	clients, err := s.repo.GetClients()
 	if err != nil {
@@ -50,6 +55,7 @@ func (s *ExportService) ExportClients() (string, error) {
 	return file, nil
 }
 
+// ExportRentHistories экспортирует историю аренды в CSV и возвращает путь к файлу.
 func (s *ExportService) ExportRentHistories() (string, error) {
 	histories, err := s.repo.GetRentHistories()
 	if err != nil {
@@ -65,6 +71,7 @@ func (s *ExportService) ExportRentHistories() (string, error) {
 	return file, nil
 }
 
+// ExportRentalRequests экспортирует заявки на аренду в CSV и возвращает путь к файлу.
 func (s *ExportService) ExportRentalRequests() (string, error) {
 	requests, err := s.repo.GetRentalRequests()
 	if err != nil {
@@ -89,7 +96,11 @@ func writeCarsCSV(filename string, cars []entity.Car) error {
 	if err != nil {
 		return fmt.Errorf("create file: %w", err)
 	}
-	defer f.Close()
+	defer func() {
+    	if err := f.Close(); err != nil {
+    		log.Printf("Ошибка при закрытии файла: %v", err)
+    	}
+    }()
 	if _, err := f.Write([]byte{0xEF, 0xBB, 0xBF}); err != nil {
 		return fmt.Errorf("write BOM: %w", err)
 	}
@@ -122,7 +133,11 @@ func writeClientsCSV(filename string, clients []entity.Client) error {
 	if err != nil {
 		return fmt.Errorf("create file: %w", err)
 	}
-	defer f.Close()
+	defer func() {
+    	if err := f.Close(); err != nil {
+    		log.Printf("Ошибка при закрытии файла: %v", err)
+    	}
+    }()
 	if _, err := f.Write([]byte{0xEF, 0xBB, 0xBF}); err != nil {
 		return fmt.Errorf("write BOM: %w", err)
 	}
@@ -147,7 +162,11 @@ func writeRentHistoriesCSV(filename string, histories []entity.RentHistory) erro
 	if err != nil {
 		return fmt.Errorf("create file: %w", err)
 	}
-	defer f.Close()
+	defer func() {
+    	if err := f.Close(); err != nil {
+    		log.Printf("Ошибка при закрытии файла: %v", err)
+    	}
+    }()
 	if _, err := f.Write([]byte{0xEF, 0xBB, 0xBF}); err != nil {
 		return fmt.Errorf("write BOM: %w", err)
 	}
@@ -176,7 +195,11 @@ func writeRentalRequestsCSV(filename string, requests []entity.RentalRequest) er
 	if err != nil {
 		return fmt.Errorf("create file: %w", err)
 	}
-	defer f.Close()
+	defer func() {
+    	if err := f.Close(); err != nil {
+    		log.Printf("Ошибка при закрытии файла: %v", err)
+    	}
+    }()
 	if _, err := f.Write([]byte{0xEF, 0xBB, 0xBF}); err != nil {
 		return fmt.Errorf("write BOM: %w", err)
 	}
