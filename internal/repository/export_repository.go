@@ -1,3 +1,4 @@
+// Package repository реализует слой доступа к данным для экспорта
 package repository
 
 import (
@@ -5,6 +6,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// ExportRepository определяет интерфейс для экспорта данных из базы
 type ExportRepository interface {
 	GetCars() ([]entity.Car, error)
 	GetClients() ([]entity.Client, error)
