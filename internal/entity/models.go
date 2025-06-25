@@ -8,7 +8,7 @@ import (
 
 // Car описывает автомобиль
 type Car struct {
-	ID              uint         `gorm:"primaryKey"`
+	ID              uint `gorm:"primaryKey"`
 	Make            string
 	Model           string
 	Year            int
@@ -23,14 +23,14 @@ type Car struct {
 
 // Client описывает клиента
 type Client struct {
-	ID    uint   `gorm:"primaryKey"`
+	ID    uint `gorm:"primaryKey"`
 	Name  string
 	Email string
 }
 
 // RentHistory описывает историю аренды автомобиля
 type RentHistory struct {
-	ID        uint      `gorm:"primaryKey"`
+	ID        uint `gorm:"primaryKey"`
 	ClientID  uint
 	CarID     uint
 	StartTime time.Time
@@ -40,7 +40,7 @@ type RentHistory struct {
 
 // RentalRequest описывает заявку на аренду автомобиля
 type RentalRequest struct {
-	ID        uint      `gorm:"primaryKey"`
+	ID        uint `gorm:"primaryKey"`
 	ClientID  uint
 	CarID     uint
 	StartTime time.Time

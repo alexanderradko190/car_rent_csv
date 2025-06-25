@@ -11,12 +11,16 @@ import (
 type fakeRepo struct{}
 
 func (f *fakeRepo) GetCars() ([]entity.Car, error) { return []entity.Car{{ID: 1, Make: "BMW"}}, nil }
-func (f *fakeRepo) GetClients() ([]entity.Client, error) { return []entity.Client{{ID: 1, Name: "Ivan"}}, nil }
+func (f *fakeRepo) GetClients() ([]entity.Client, error) {
+	return []entity.Client{{ID: 1, Name: "Ivan"}}, nil
+}
 func (f *fakeRepo) GetRentHistories() ([]entity.RentHistory, error) { return nil, errors.New("fail") }
-func (f *fakeRepo) GetRentalRequests() ([]entity.RentalRequest, error) { return []entity.RentalRequest{}, nil }
+func (f *fakeRepo) GetRentalRequests() ([]entity.RentalRequest, error) {
+	return []entity.RentalRequest{}, nil
+}
 
 func TestExportCars(t *testing.T) {
-    t.Log("-> стартует TestExportCars")
+	t.Log("-> стартует TestExportCars")
 	dir := os.TempDir()
 	s := service.NewExportService(&fakeRepo{}, dir)
 	file, err := s.ExportCars()
@@ -27,12 +31,12 @@ func TestExportCars(t *testing.T) {
 		t.Fatalf("файл не найден: %v", err)
 	}
 	if err := os.Remove(file); err != nil {
-        t.Logf("Не удалось удалить файл после теста: %v", err)
-    }
+		t.Logf("Не удалось удалить файл после теста: %v", err)
+	}
 }
 
 func TestExportRentHistories_Error(t *testing.T) {
-    t.Log("-> стартует TestExportRentHistories_Error")
+	t.Log("-> стартует TestExportRentHistories_Error")
 	dir := os.TempDir()
 	s := service.NewExportService(&fakeRepo{}, dir)
 	_, err := s.ExportRentHistories()
