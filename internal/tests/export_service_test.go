@@ -26,7 +26,9 @@ func TestExportCars(t *testing.T) {
 	if _, err := os.Stat(file); err != nil {
 		t.Fatalf("файл не найден: %v", err)
 	}
-	os.Remove(file)
+	if err := os.Remove(file); err != nil {
+        t.Logf("Не удалось удалить файл после теста: %v", err)
+    }
 }
 
 func TestExportRentHistories_Error(t *testing.T) {

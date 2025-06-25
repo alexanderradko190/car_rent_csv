@@ -1,3 +1,4 @@
+// Package config содержит работу с конфигурацией и .env переменными
 package config
 
 import (

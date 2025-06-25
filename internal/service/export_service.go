@@ -89,7 +89,11 @@ func writeCarsCSV(filename string, cars []entity.Car) error {
 	if err != nil {
 		return fmt.Errorf("create file: %w", err)
 	}
-	defer f.Close()
+	defer func() {
+    	if err := f.Close(); err != nil {
+    		log.Printf("Ошибка при закрытии файла: %v", err)
+    	}
+    }()
 	if _, err := f.Write([]byte{0xEF, 0xBB, 0xBF}); err != nil {
 		return fmt.Errorf("write BOM: %w", err)
 	}
@@ -122,7 +126,11 @@ func writeClientsCSV(filename string, clients []entity.Client) error {
 	if err != nil {
 		return fmt.Errorf("create file: %w", err)
 	}
-	defer f.Close()
+	defer func() {
+    	if err := f.Close(); err != nil {
+    		log.Printf("Ошибка при закрытии файла: %v", err)
+    	}
+    }()
 	if _, err := f.Write([]byte{0xEF, 0xBB, 0xBF}); err != nil {
 		return fmt.Errorf("write BOM: %w", err)
 	}
@@ -147,7 +155,11 @@ func writeRentHistoriesCSV(filename string, histories []entity.RentHistory) erro
 	if err != nil {
 		return fmt.Errorf("create file: %w", err)
 	}
-	defer f.Close()
+	defer func() {
+    	if err := f.Close(); err != nil {
+    		log.Printf("Ошибка при закрытии файла: %v", err)
+    	}
+    }()
 	if _, err := f.Write([]byte{0xEF, 0xBB, 0xBF}); err != nil {
 		return fmt.Errorf("write BOM: %w", err)
 	}
@@ -176,7 +188,11 @@ func writeRentalRequestsCSV(filename string, requests []entity.RentalRequest) er
 	if err != nil {
 		return fmt.Errorf("create file: %w", err)
 	}
-	defer f.Close()
+	defer func() {
+    	if err := f.Close(); err != nil {
+    		log.Printf("Ошибка при закрытии файла: %v", err)
+    	}
+    }()
 	if _, err := f.Write([]byte{0xEF, 0xBB, 0xBF}); err != nil {
 		return fmt.Errorf("write BOM: %w", err)
 	}
