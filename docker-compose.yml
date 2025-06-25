@@ -17,7 +17,6 @@ services:
       - appnet
     ports:
       - "8002:8002"
-   # command: go run ./cmd/server
 
   rabbitmq:
     image: rabbitmq:3-management
@@ -30,12 +29,6 @@ services:
       RABBITMQ_DEFAULT_PASS: guest
     networks:
       - appnet
-  gotest:
-    image: golang:1.21-alpine
-    working_dir: /app
-    volumes:
-      - .:/app
-    command: go test ./...
 
 networks:
   appnet:
