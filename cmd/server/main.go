@@ -1,3 +1,4 @@
+// Package main реализует запуск экспорт-сервиса (HTTP + RabbitMQ consumer).
 package main
 
 import (
@@ -16,7 +17,9 @@ import (
 func main() {
 	cfg := config.LoadConfig()
 	db, err := storage.NewDB(cfg)
-	if err != nil { log.Fatal(err) }
+	if err != nil {
+		log.Fatal(err)
+	}
 	repo := repository.NewExportRepository(db)
 	svc := service.NewExportService(repo, cfg.ExportDir)
 
@@ -28,87 +31,84 @@ func main() {
 	}
 
 	conn, err := amqp.Dial(amqpURL)
-	if err != nil { log.Fatal(err) }
-	ch, err := conn.Channel()
 	if err != nil {
-		// закроем соединение если канал не открылся
-		closeErr := conn.Close()
-		if closeErr != nil {
-			log.Printf("Ошибка при закрытии AMQP соединения: %v", closeErr)
-		}
 		log.Fatal(err)
 	}
-	defer func() {
-		if err := ch.Close(); err != nil {
-			log.Printf("Ошибка при закрытии AMQP канала: %v", err)
-		}
-		if err := conn.Close(); err != nil {
-			log.Printf("Ошибка при закрытии AMQP соединения: %v", err)
-		}
-	}()
+
+	ch, err := conn.Channel()
+	if err != nil {
+		conn.Close()
+		log.Fatal(err)
+	}
+
 	q, err := ch.QueueDeclare("export_tasks", false, false, false, false, nil)
-	if err != nil { log.Fatal(err) }
+	if err != nil {
+		ch.Close()
+		conn.Close()
+		log.Fatal(err)
+	}
+
 	msgs, err := ch.Consume(q.Name, "", true, false, false, false, nil)
-	if err != nil { log.Fatal(err) }
+	if err != nil {
+		ch.Close()
+		conn.Close()
+		log.Fatal(err)
+	}
+
 	log.Println("Ожидание задач экспорта в RabbitMQ...")
 
 	for d := range msgs {
 		task := string(d.Body)
 		switch task {
 		case "cars":
-			_, err := svc.ExportCars()
-			if err != nil { log.Printf("ошибка экспорта cars: %v", err) }
-			log.Println("Экспорт cars завершён")
+			if _, err := svc.ExportCars(); err != nil {
+				log.Printf("ошибка экспорта cars: %v", err)
+			} else {
+				log.Println("Экспорт cars завершён")
+			}
 		case "clients":
-			_, err := svc.ExportClients()
-			if err != nil { log.Printf("ошибка экспорта clients: %v", err) }
-			log.Println("Экспорт clients завершён")
+			if _, err := svc.ExportClients(); err != nil {
+				log.Printf("ошибка экспорта clients: %v", err)
+			} else {
+				log.Println("Экспорт clients завершён")
+			}
 		case "rent_histories":
-			_, err := svc.ExportRentHistories()
-			if err != nil { log.Printf("ошибка экспорта rent_histories: %v", err) }
-			log.Println("Экспорт rent_histories завершён")
+			if _, err := svc.ExportRentHistories(); err != nil {
+				log.Printf("ошибка экспорта rent_histories: %v", err)
+			} else {
+				log.Println("Экспорт rent_histories завершён")
+			}
 		case "rental_requests":
-			_, err := svc.ExportRentalRequests()
-			if err != nil { log.Printf("ошибка экспорта rental_requests: %v", err) }
-			log.Println("Экспорт rental_requests завершён")
+			if _, err := svc.ExportRentalRequests(); err != nil {
+				log.Printf("ошибка экспорта rental_requests: %v", err)
+			} else {
+				log.Println("Экспорт rental_requests завершён")
+			}
 		default:
 			log.Printf("Неизвестная задача: %s", task)
 		}
+	}
+
+	if err := ch.Close(); err != nil {
+		log.Printf("Ошибка при закрытии AMQP канала: %v", err)
+	}
+	if err := conn.Close(); err != nil {
+		log.Printf("Ошибка при закрытии AMQP соединения: %v", err)
 	}
 }
 
 func startHTTPServer(svc *service.ExportService, exportDir string) {
 	http.HandleFunc("/export/cars", func(w http.ResponseWriter, r *http.Request) {
-		path, err := svc.ExportCars()
-		if err != nil {
-			http.Error(w, "Ошибка экспорта: "+err.Error(), http.StatusInternalServerError)
-			return
-		}
-		sendExportResult(w, path, w)
+		handleExport(w, func() (string, error) { return svc.ExportCars() })
 	})
 	http.HandleFunc("/export/clients", func(w http.ResponseWriter, r *http.Request) {
-		path, err := svc.ExportClients()
-		if err != nil {
-			http.Error(w, "Ошибка экспорта: "+err.Error(), http.StatusInternalServerError)
-			return
-		}
-		sendExportResult(w, path, w)
+		handleExport(w, func() (string, error) { return svc.ExportClients() })
 	})
 	http.HandleFunc("/export/rent_histories", func(w http.ResponseWriter, r *http.Request) {
-		path, err := svc.ExportRentHistories()
-		if err != nil {
-			http.Error(w, "Ошибка экспорта: "+err.Error(), http.StatusInternalServerError)
-			return
-		}
-		sendExportResult(w, path, w)
+		handleExport(w, func() (string, error) { return svc.ExportRentHistories() })
 	})
 	http.HandleFunc("/export/rental_requests", func(w http.ResponseWriter, r *http.Request) {
-		path, err := svc.ExportRentalRequests()
-		if err != nil {
-			http.Error(w, "Ошибка экспорта: "+err.Error(), http.StatusInternalServerError)
-			return
-		}
-		sendExportResult(w, path, w)
+		handleExport(w, func() (string, error) { return svc.ExportRentalRequests() })
 	})
 	http.HandleFunc("/exports/", func(w http.ResponseWriter, r *http.Request) {
 		fileName := filepath.Base(r.URL.Path)
@@ -119,14 +119,25 @@ func startHTTPServer(svc *service.ExportService, exportDir string) {
 	})
 
 	log.Println("HTTP сервер запущен на :8002")
-	log.Fatal(http.ListenAndServe(":8002", nil))
+	if err := http.ListenAndServe(":8002", nil); err != nil {
+		log.Fatal(err)
+	}
 }
 
-func sendExportResult(w http.ResponseWriter, filePath string, ww http.ResponseWriter) {
+func handleExport(w http.ResponseWriter, exportFn func() (string, error)) {
+	path, err := exportFn()
+	if err != nil {
+		http.Error(w, "Ошибка экспорта: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	sendExportResult(w, path)
+}
+
+func sendExportResult(w http.ResponseWriter, filePath string) {
 	fileName := filepath.Base(filePath)
 	url := "/exports/" + fileName
-	ww.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(ww).Encode(map[string]interface{}{
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(map[string]interface{}{
 		"status":   "done",
 		"file_url": url,
 	}); err != nil {
