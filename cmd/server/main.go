@@ -1,84 +1,115 @@
 package main
 
 import (
+	"car-export-go/internal/config"
+	"car-export-go/internal/repository"
+	"car-export-go/internal/service"
+	"car-export-go/internal/storage"
 	"encoding/json"
+	"github.com/streadway/amqp"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
-
-	"car-export-go/internal/config"
-	"car-export-go/internal/service"
-	"car-export-go/internal/storage"
 )
 
 func main() {
 	cfg := config.LoadConfig()
-	if err := os.MkdirAll(cfg.ExportDir, 0755); err != nil {
-		log.Fatalf("Cannot create export dir: %v", err)
-	}
 	db, err := storage.NewDB(cfg)
-	if err != nil {
-		log.Fatalf("Cannot connect DB: %v", err)
+	if err != nil { log.Fatal(err) }
+	repo := repository.NewExportRepository(db)
+	svc := service.NewExportService(repo, cfg.ExportDir)
+
+	go startHTTPServer(svc, cfg.ExportDir)
+
+	amqpURL := os.Getenv("RABBITMQ_URL")
+	if amqpURL == "" {
+		amqpURL = "amqp://guest:guest@rabbitmq:5672/"
 	}
 
-	exportService := service.NewExportService(db, cfg.ExportDir)
+	conn, err := amqp.Dial(amqpURL)
+	if err != nil { log.Fatal(err) }
+	defer conn.Close()
+	ch, err := conn.Channel()
+	if err != nil { log.Fatal(err) }
+	defer ch.Close()
+	q, err := ch.QueueDeclare("export_tasks", false, false, false, false, nil)
+	if err != nil { log.Fatal(err) }
+	msgs, err := ch.Consume(q.Name, "", true, false, false, false, nil)
+	if err != nil { log.Fatal(err) }
+	log.Println("Ожидание задач экспорта в RabbitMQ...")
 
-	http.HandleFunc("/exports/", func(w http.ResponseWriter, r *http.Request) {
-        fileName := filepath.Base(r.URL.Path) // Получаем только имя файла (без слэшей)
-        filePath := filepath.Join(cfg.ExportDir, fileName)
-        w.Header().Set("Content-Type", "text/csv; charset=utf-8")
-        w.Header().Set("Content-Disposition", "attachment; filename=\""+fileName+"\"")
-        http.ServeFile(w, r, filePath)
-    })
+	for d := range msgs {
+		task := string(d.Body)
+		switch task {
+		case "cars":
+			_, err := svc.ExportCars()
+			if err != nil { log.Printf("ошибка экспорта cars: %v", err) }
+			log.Println("Экспорт cars завершён")
+		case "clients":
+			_, err := svc.ExportClients()
+			if err != nil { log.Printf("ошибка экспорта clients: %v", err) }
+			log.Println("Экспорт clients завершён")
+		case "rent_histories":
+			_, err := svc.ExportRentHistories()
+			if err != nil { log.Printf("ошибка экспорта rent_histories: %v", err) }
+			log.Println("Экспорт rent_histories завершён")
+		case "rental_requests":
+			_, err := svc.ExportRentalRequests()
+			if err != nil { log.Printf("ошибка экспорта rental_requests: %v", err) }
+			log.Println("Экспорт rental_requests завершён")
+		default:
+			log.Printf("Неизвестная задача: %s", task)
+		}
+	}
+}
 
+func startHTTPServer(svc *service.ExportService, exportDir string) {
 	http.HandleFunc("/export/cars", func(w http.ResponseWriter, r *http.Request) {
-        path, err := exportService.ExportCars()
-        if err != nil {
-            http.Error(w, "Ошибка экспорта: "+err.Error(), http.StatusInternalServerError)
-            return
-        }
-        fileName := filepath.Base(path)
-        url := "/exports/" + fileName
-        w.Header().Set("Content-Type", "application/json")
-        json.NewEncoder(w).Encode(map[string]interface{}{
-            "status":   "done",
-            "file_url": url,
-        })
-    })
-
+		path, err := svc.ExportCars()
+		if err != nil {
+			http.Error(w, "Ошибка экспорта: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		sendExportResult(w, path)
+	})
 	http.HandleFunc("/export/clients", func(w http.ResponseWriter, r *http.Request) {
-		path, err := exportService.ExportClients()
+		path, err := svc.ExportClients()
 		if err != nil {
 			http.Error(w, "Ошибка экспорта: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
-		sendExportResult(w, r, path)
+		sendExportResult(w, path)
 	})
-
 	http.HandleFunc("/export/rent_histories", func(w http.ResponseWriter, r *http.Request) {
-		path, err := exportService.ExportRentHistories()
+		path, err := svc.ExportRentHistories()
 		if err != nil {
 			http.Error(w, "Ошибка экспорта: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
-		sendExportResult(w, r, path)
+		sendExportResult(w, path)
 	})
-
 	http.HandleFunc("/export/rental_requests", func(w http.ResponseWriter, r *http.Request) {
-		path, err := exportService.ExportRentalRequests()
+		path, err := svc.ExportRentalRequests()
 		if err != nil {
 			http.Error(w, "Ошибка экспорта: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
-		sendExportResult(w, r, path)
+		sendExportResult(w, path)
+	})
+	http.HandleFunc("/exports/", func(w http.ResponseWriter, r *http.Request) {
+		fileName := filepath.Base(r.URL.Path)
+		filePath := filepath.Join(exportDir, fileName)
+		w.Header().Set("Content-Type", "text/csv; charset=utf-8")
+		w.Header().Set("Content-Disposition", "attachment; filename=\""+fileName+"\"")
+		http.ServeFile(w, r, filePath)
 	})
 
 	log.Println("HTTP сервер запущен на :8002")
 	log.Fatal(http.ListenAndServe(":8002", nil))
 }
 
-func sendExportResult(w http.ResponseWriter, r *http.Request, filePath string) {
+func sendExportResult(w http.ResponseWriter, filePath string) {
 	fileName := filepath.Base(filePath)
 	url := "/exports/" + fileName
 	w.Header().Set("Content-Type", "application/json")

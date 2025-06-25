@@ -1,6 +1,9 @@
 package repository
 
-import "car-export-go/internal/entity"
+import (
+	"car-export-go/internal/entity"
+	"gorm.io/gorm"
+)
 
 type ExportRepository interface {
 	GetCars() ([]entity.Car, error)
@@ -9,24 +12,34 @@ type ExportRepository interface {
 	GetRentalRequests() ([]entity.RentalRequest, error)
 }
 
-type mockExportRepository struct{}
-
-func NewExportRepository() ExportRepository {
-	return &mockExportRepository{}
+type exportRepository struct {
+	db *gorm.DB
 }
 
-func (r *mockExportRepository) GetCars() ([]entity.Car, error) {
-	return []entity.Car{{1, "Toyota", "Corolla", 2020}}, nil
+func NewExportRepository(db *gorm.DB) ExportRepository {
+	return &exportRepository{db: db}
 }
 
-func (r *mockExportRepository) GetClients() ([]entity.Client, error) {
-	return []entity.Client{{1, "Ivan", "ivan@mail.com"}}, nil
+func (r *exportRepository) GetCars() ([]entity.Car, error) {
+	var cars []entity.Car
+	err := r.db.Find(&cars).Error
+	return cars, err
 }
 
-func (r *mockExportRepository) GetRentHistories() ([]entity.RentHistory, error) {
-	return []entity.RentHistory{{1, 1, 1, "2024-01-01", "2024-01-03"}}, nil
+func (r *exportRepository) GetClients() ([]entity.Client, error) {
+	var clients []entity.Client
+	err := r.db.Find(&clients).Error
+	return clients, err
 }
 
-func (r *mockExportRepository) GetRentalRequests() ([]entity.RentalRequest, error) {
-	return []entity.RentalRequest{{1, 1, 1, "approved"}}, nil
+func (r *exportRepository) GetRentHistories() ([]entity.RentHistory, error) {
+	var histories []entity.RentHistory
+	err := r.db.Find(&histories).Error
+	return histories, err
+}
+
+func (r *exportRepository) GetRentalRequests() ([]entity.RentalRequest, error) {
+	var requests []entity.RentalRequest
+	err := r.db.Find(&requests).Error
+	return requests, err
 }

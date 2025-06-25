@@ -1,0 +1,25 @@
+run:
+  skip-dirs:
+    - "vendor"
+  timeout: 2m
+
+linters:
+  enable:
+    - govet
+    - gofmt
+    - staticcheck
+    - errcheck
+    - revive
+    - unused
+    - gosimple
+    - gocritic
+    - structcheck
+    - varcheck
+    - deadcode
+    - ineffassign
+    - typecheck
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+  exclude-use-default: false
