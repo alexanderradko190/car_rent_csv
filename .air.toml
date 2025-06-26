@@ -1,0 +1,6 @@
+[build]
+  cmd = "go build -o app ./cmd/server"
+  bin = "app"
+  include_ext = ["go"]
+  exclude_dir = ["vendor"]
+  delay = 1000
